@@ -14,8 +14,6 @@ export async function pageCountOf(bytes: Uint8Array): Promise<number> {
 type Stamp = {
   field: Pick<Field, "pageIndex" | "x" | "y" | "width" | "height">;
   signaturePngDataUrl: string;
-  printedName: string;
-  signedAt: Date;
 };
 
 function pngBytesFromDataUrl(dataUrl: string): Uint8Array {
@@ -37,23 +35,16 @@ export async function stampSignature(
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(pdfBytes);
   const page = pdf.getPage(stamp.field.pageIndex);
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
   const png = await pdf.embedPng(pngBytesFromDataUrl(stamp.signaturePngDataUrl));
 
   const { x, y, width, height } = stamp.field;
-  const captionHeight = 9;
-  const imageBox = { width, height: height - captionHeight };
-  const scaled = png.scaleToFit(imageBox.width, imageBox.height);
+  const scaled = png.scaleToFit(width, height);
   page.drawImage(png, {
-    x: x + (imageBox.width - scaled.width) / 2,
-    y: y + captionHeight + (imageBox.height - scaled.height) / 2,
+    x: x + (width - scaled.width) / 2,
+    y: y + (height - scaled.height) / 2,
     width: scaled.width,
     height: scaled.height,
   });
-  page.drawText(
-    `${stamp.printedName} · ${formatStamp(stamp.signedAt)}`,
-    { x, y: y + 1, size: 6, font, color: rgb(0.35, 0.35, 0.35) },
-  );
   return pdf.save();
 }
 

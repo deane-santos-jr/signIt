@@ -171,8 +171,6 @@ export async function countersign(documentId: string): Promise<void> {
   const stamped = await stampSignature(await fetchPdf(bundle.document.workingUrl), {
     field,
     signaturePngDataUrl: saved.signaturePng,
-    printedName: saved.signatureName,
-    signedAt,
   });
   const workingUrl = await storePdf(`documents/${documentId}/working.pdf`, stamped);
 

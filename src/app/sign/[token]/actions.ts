@@ -41,8 +41,6 @@ export async function submitSignature(
     pdf = await stampSignature(pdf, {
       field,
       signaturePngDataUrl: signaturePng,
-      printedName: signer.name,
-      signedAt,
     });
   }
   const workingUrl = await storePdf(
