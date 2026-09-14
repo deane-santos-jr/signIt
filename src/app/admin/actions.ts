@@ -16,7 +16,7 @@ import { newId, newToken } from "@/lib/ids";
 import { pageCountOf, sha256Hex, stampSignature } from "@/lib/pdf";
 import { requestOrigin } from "@/lib/request";
 import { requireAdmin } from "@/lib/session";
-import { fetchPdf, storePdf } from "@/lib/storage";
+import { deletePdfs, fetchPdf, storePdf } from "@/lib/storage";
 import { finalizeDocument } from "@/lib/finalize";
 import { ADMIN_SETTINGS_ID, loadAdminSignature } from "@/lib/adminSignature";
 
@@ -194,4 +194,17 @@ export async function countersign(documentId: string): Promise<void> {
 
   await finalizeDocument(documentId, { name: saved.signatureName, ...origin, signedAt });
   revalidatePath(`/admin/documents/${documentId}`);
+}
+
+export async function deleteDocument(documentId: string): Promise<void> {
+  await requireAdmin();
+  const bundle = await loadDocument(documentId);
+  if (!bundle) throw new Error("Document not found");
+  await deletePdfs(
+    [bundle.document.originalUrl, bundle.document.workingUrl, bundle.document.finalUrl].filter(
+      (u): u is string => !!u,
+    ),
+  );
+  await db.delete(documents).where(eq(documents.id, documentId));
+  redirect("/admin");
 }

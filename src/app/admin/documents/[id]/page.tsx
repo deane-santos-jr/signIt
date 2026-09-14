@@ -8,6 +8,7 @@ import { FieldPlacer } from "./FieldPlacer";
 import { SendButton } from "./SendButton";
 import { CountersignButton } from "./CountersignButton";
 import { CopyLink } from "./CopyLink";
+import { DeleteButton } from "./DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +148,10 @@ export default async function DocumentPage({
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="border-t border-line pt-6">
+        <DeleteButton documentId={id} title={document.title} />
       </section>
     </div>
   );
