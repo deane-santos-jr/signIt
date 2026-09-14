@@ -1,4 +1,5 @@
 import { loadSignerByToken } from "@/lib/documents";
+import { Wordmark } from "@/components/Wordmark";
 import { SignerView } from "./SignerView";
 
 export const dynamic = "force-dynamic";
@@ -9,10 +10,11 @@ export default async function SignPage({ params }: PageProps<"/sign/[token]">) {
 
   if (!found || found.bundle.document.status === "draft") {
     return (
-      <main className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="text-lg font-semibold">This signing link is not valid</h1>
-        <p className="mt-2 text-sm text-neutral-500">
-          Ask the person who sent it for a new link.
+      <main className="mx-auto max-w-md px-6 py-28 text-center">
+        <Wordmark className="text-ink-muted" />
+        <h1 className="mt-6 text-3xl">This link is not valid</h1>
+        <p className="mt-3 text-sm text-ink-muted">
+          It may have been replaced. Ask the person who sent it for a new one.
         </p>
       </main>
     );

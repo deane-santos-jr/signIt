@@ -30,26 +30,21 @@ export function AdminSignatureForm({ initialName }: { initialName: string }) {
   }
 
   return (
-    <div className="mt-6 flex flex-col gap-4">
-      <SignaturePad onChange={onChange} />
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Name printed under the signature</span>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-          placeholder="Deane Benjie B. Santos Jr."
-        />
+    <div className="card reveal mt-6 flex flex-col gap-5 p-6" style={{ ["--i" as string]: 1 }}>
+      <div>
+        <p className="label mb-2">Draw</p>
+        <SignaturePad onChange={onChange} />
+      </div>
+      <label className="flex flex-col gap-1.5">
+        <span className="label">Printed name</span>
+        <input value={name} onChange={(e) => setName(e.target.value)} className="field" placeholder="As it should appear under the signature" />
       </label>
-      {message && <p className="text-sm text-neutral-600">{message}</p>}
-      <button
-        type="button"
-        onClick={submit}
-        disabled={pending}
-        className="self-start rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {pending ? "Saving…" : "Save signature"}
-      </button>
+      <div className="flex items-center justify-between border-t border-line pt-5">
+        <p className="text-sm text-ink-muted">{message}</p>
+        <button type="button" onClick={submit} disabled={pending} className="btn btn-primary">
+          {pending ? "Saving" : "Save signature"}
+        </button>
+      </div>
     </div>
   );
 }

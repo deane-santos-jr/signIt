@@ -22,11 +22,11 @@ export function SendButton({ documentId }: { documentId: string }) {
             }
           })
         }
-        className="rounded-md border border-neutral-900 px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+        className="btn btn-secondary"
       >
-        {pending ? "Sending…" : "Mark as sent and get links"}
+        {pending ? "Locking" : "Mark as sent"}
       </button>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-bad-ink">{error}</p>}
     </div>
   );
 }

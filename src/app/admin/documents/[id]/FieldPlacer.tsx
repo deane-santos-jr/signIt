@@ -35,6 +35,9 @@ export function FieldPlacer({ documentId, pdfUrl, signers, initialFields }: Prop
   const labelFor = (field: FieldDraft) =>
     field.owner === "admin" ? "You" : signers.find((s) => s.id === field.signerId)?.name ?? "?";
 
+  const placedFor = (id: string) =>
+    fields.some((f) => (id === ADMIN ? f.owner === "admin" : f.signerId === id));
+
   function place(page: PageGeometry, xPt: number, yPt: number) {
     if (drag) return;
     const field: FieldDraft = {
@@ -47,6 +50,7 @@ export function FieldPlacer({ documentId, pdfUrl, signers, initialFields }: Prop
     };
     setFields((prev) => [...prev, field]);
     setDirty(true);
+    setMessage(null);
   }
 
   function remove(index: number) {
@@ -59,39 +63,40 @@ export function FieldPlacer({ documentId, pdfUrl, signers, initialFields }: Prop
       try {
         await saveFields(documentId, fields);
         setDirty(false);
-        setMessage("Saved.");
+        setMessage("Saved");
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Could not save");
       }
     });
   }
 
+  const choices = [...signers.map((s) => ({ id: s.id, name: s.name })), { id: ADMIN, name: "You" }];
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 rounded-md border border-neutral-200 bg-white p-3 text-sm">
-        <label className="flex items-center gap-2">
-          <span className="text-neutral-600">Box for</span>
-          <select
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            className="rounded-md border border-neutral-300 px-2 py-1"
-          >
-            {signers.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-            <option value={ADMIN}>You (countersign)</option>
-          </select>
-        </label>
-        <span className="text-neutral-400">then click on the page</span>
-        <div className="ml-auto flex items-center gap-3">
-          {message && <span className="text-neutral-500">{message}</span>}
-          <button
-            type="button"
-            onClick={save}
-            disabled={pending || !dirty}
-            className="rounded-md bg-neutral-900 px-3 py-1.5 font-medium text-white disabled:opacity-40"
-          >
-            {pending ? "Saving…" : "Save boxes"}
+    <div className="flex flex-col gap-4">
+      <div className="card sticky top-[65px] z-10 flex flex-wrap items-center gap-2 p-2 pl-3">
+        <span className="label mr-1">Box for</span>
+        {choices.map((c) => {
+          const active = target === c.id;
+          const done = placedFor(c.id);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setTarget(c.id)}
+              className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                active ? "border-ink bg-ink text-white" : "border-line-strong bg-white text-ink hover:border-ink"
+              }`}
+            >
+              {c.name}
+              {done && <span className={`ml-2 text-xs ${active ? "text-white/60" : "text-ok-ink"}`}>placed</span>}
+            </button>
+          );
+        })}
+        <div className="ml-auto flex items-center gap-3 pr-1">
+          <span className="text-xs text-ink-muted">{message}</span>
+          <button type="button" onClick={save} disabled={pending || !dirty} className="btn btn-primary py-1.5">
+            {pending ? "Saving" : "Save boxes"}
           </button>
         </div>
       </div>
@@ -109,8 +114,8 @@ export function FieldPlacer({ documentId, pdfUrl, signers, initialFields }: Prop
                 <div
                   key={index}
                   style={style}
-                  className={`group flex cursor-move items-end justify-between border-2 border-dashed text-[10px] font-medium ${
-                    isAdmin ? "border-blue-500 bg-blue-500/10 text-blue-800" : "border-amber-500 bg-amber-400/10 text-amber-900"
+                  className={`group flex cursor-move items-end justify-between rounded-sm border text-[11px] font-medium ${
+                    isAdmin ? "border-info-ink/60 bg-info/70 text-info-ink" : "border-sign-line bg-sign/80 text-sign-ink"
                   }`}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => {
@@ -132,17 +137,17 @@ export function FieldPlacer({ documentId, pdfUrl, signers, initialFields }: Prop
                   }}
                   onPointerUp={() => setTimeout(() => setDrag(null), 0)}
                 >
-                  <span className="px-1">{labelFor(field)}</span>
+                  <span className="px-1.5 pb-0.5">{labelFor(field)}</span>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       remove(index);
                     }}
-                    className="px-1 text-neutral-500 opacity-0 group-hover:opacity-100"
+                    className="px-1.5 pb-0.5 opacity-0 transition-opacity group-hover:opacity-100"
                     aria-label="Remove box"
                   >
-                    ×
+                    remove
                   </button>
                 </div>
               );

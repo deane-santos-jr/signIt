@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from "react";
 import { PdfPages, boxStyle } from "@/components/PdfPages";
 import { SignaturePad } from "@/components/SignaturePad";
+import { Wordmark } from "@/components/Wordmark";
 import { submitSignature } from "./actions";
 
 type Box = { pageIndex: number; x: number; y: number; width: number; height: number };
@@ -43,25 +44,21 @@ export function SignerView(props: Props) {
   }
 
   return (
-    <div className="min-h-screen pb-32">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold">{props.documentTitle}</p>
-            <p className="text-xs text-neutral-500">
+    <div className="min-h-screen pb-28">
+      <header className="sticky top-0 z-10 border-b border-line bg-canvas/90 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate font-serif text-lg leading-tight">{props.documentTitle}</p>
+            <p className="text-xs text-ink-muted">
               {props.clientName} · signing as {props.signerName}
             </p>
           </div>
           {done ? (
-            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
-              {props.completed ? "Completed by all parties" : "You have signed"}
+            <span className="tag bg-ok text-ok-ink">
+              {props.completed ? "Completed by all parties" : "Signed"}
             </span>
           ) : (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-            >
+            <button type="button" onClick={() => setOpen(true)} className="btn btn-primary">
               Sign document
             </button>
           )}
@@ -70,8 +67,13 @@ export function SignerView(props: Props) {
 
       <main className="mx-auto max-w-4xl px-4 py-6">
         {done && !props.completed && (
-          <p className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-900">
+          <p className="reveal mb-5 rounded-lg border border-ok-ink/20 bg-ok px-4 py-3 text-sm text-ok-ink">
             Thank you. You will receive the completed copy once everyone has signed.
+          </p>
+        )}
+        {!done && (
+          <p className="mb-5 text-sm text-ink-muted">
+            Read through, then press <span className="text-ink">Sign document</span> or tap a highlighted box.
           </p>
         )}
         <PdfPages
@@ -87,52 +89,46 @@ export function SignerView(props: Props) {
                       type="button"
                       onClick={() => setOpen(true)}
                       style={{ position: "absolute", ...boxStyle(page, f) }}
-                      className="flex items-center justify-center border-2 border-amber-500 bg-amber-300/30 text-xs font-medium text-amber-900"
+                      className="flex items-center justify-center rounded-sm border border-sign-line bg-sign/90 text-xs font-medium text-sign-ink transition-colors hover:bg-sign"
                     >
                       Sign here
                     </button>
                   ))
           }
         />
+        <p className="mt-10 text-center text-xs text-ink-faint">
+          Secured by <Wordmark className="text-sm text-ink-muted" />
+        </p>
       </main>
 
       {open && !done && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/40 sm:items-center">
-          <div className="w-full max-w-md rounded-t-xl bg-white p-5 sm:rounded-xl">
-            <h2 className="text-base font-semibold">Draw your signature</h2>
-            <p className="mt-1 text-xs text-neutral-500">
-              Use your finger or mouse. It will be placed on every box marked for you.
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-ink/30 sm:items-center sm:p-6">
+          <div className="reveal w-full max-w-md rounded-t-xl bg-white p-6 sm:rounded-xl">
+            <p className="font-serif text-2xl">Your signature</p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Draw with your finger or mouse. It is placed on every box marked for you.
             </p>
-            <div className="mt-4">
+            <div className="mt-5">
               <SignaturePad onChange={onChange} />
             </div>
-            <label className="mt-4 flex items-start gap-2 text-xs text-neutral-700">
+            <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-ink-muted">
               <input
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-0.5"
+                className="mt-0.5 accent-ink"
               />
               <span>
                 I, {props.signerName}, agree that this electronic signature is the legal equivalent of my handwritten signature on this document.
               </span>
             </label>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-2 text-sm text-neutral-600"
-              >
+            {error && <p className="mt-3 text-sm text-bad-ink">{error}</p>}
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setOpen(false)} className="btn btn-quiet">
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={submit}
-                disabled={pending || !png || !agreed}
-                className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-              >
-                {pending ? "Applying…" : "Apply signature"}
+              <button type="button" onClick={submit} disabled={pending || !png || !agreed} className="btn btn-primary">
+                {pending ? "Applying" : "Apply signature"}
               </button>
             </div>
           </div>

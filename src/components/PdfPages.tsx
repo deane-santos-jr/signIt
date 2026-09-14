@@ -90,7 +90,7 @@ export function PdfPages({ url, overlay, onPageClick }: Props) {
 
   if (error) {
     return (
-      <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+      <p className="rounded-md bg-bad p-3 text-sm text-bad-ink">
         Could not load PDF: {error}
       </p>
     );
@@ -98,13 +98,13 @@ export function PdfPages({ url, overlay, onPageClick }: Props) {
 
   return (
     <div ref={containerRef} className="flex w-full flex-col items-center gap-4">
-      {!doc && <p className="text-sm text-neutral-500">Loading document…</p>}
+      {!doc && <p className="py-10 text-sm text-ink-muted">Loading document</p>}
       {Array.from({ length: doc?.numPages ?? 0 }, (_, index) => {
         const geometry = pages.find((p) => p.index === index);
         return (
           <div
             key={index}
-            className="relative bg-white shadow-sm ring-1 ring-neutral-200"
+            className="relative bg-white ring-1 ring-line"
             onClick={(event) => {
               if (!geometry || !onPageClick) return;
               const rect = event.currentTarget.getBoundingClientRect();

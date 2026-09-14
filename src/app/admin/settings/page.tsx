@@ -8,15 +8,16 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-xl font-semibold tracking-tight">Your signature</h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <h1 className="text-4xl">Your signature</h1>
+      <p className="mt-2 text-sm text-ink-muted">
         Stored once and applied when you countersign. Redraw anytime.
       </p>
       {saved?.signaturePng && (
-        <div className="mt-6 rounded-md border border-neutral-200 bg-white p-4">
-          <p className="text-xs uppercase tracking-wide text-neutral-500">Current</p>
-          <img src={saved.signaturePng} alt="Saved signature" className="mt-2 h-20" />
-          <p className="mt-1 text-sm">{saved.signatureName}</p>
+        <div className="card reveal mt-8 p-6">
+          <p className="label">Current</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={saved.signaturePng} alt="Saved signature" className="mt-3 h-20" />
+          <p className="mt-1 text-sm text-ink-muted">{saved.signatureName}</p>
         </div>
       )}
       <AdminSignatureForm initialName={saved?.signatureName ?? ""} />

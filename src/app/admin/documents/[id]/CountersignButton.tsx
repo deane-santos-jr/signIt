@@ -12,8 +12,12 @@ export function CountersignButton({ documentId, hasSavedSignature }: Props) {
 
   if (!hasSavedSignature) {
     return (
-      <p className="text-sm text-blue-900">
-        Save your signature in <Link href="/admin/settings" className="underline">Settings</Link> first.
+      <p className="text-sm text-info-ink">
+        Save your signature under{" "}
+        <Link href="/admin/settings" className="underline underline-offset-4">
+          Signature
+        </Link>{" "}
+        first.
       </p>
     );
   }
@@ -33,11 +37,11 @@ export function CountersignButton({ documentId, hasSavedSignature }: Props) {
             }
           })
         }
-        className="self-start rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="btn btn-primary self-start"
       >
-        {pending ? "Signing and finalising…" : "Countersign and finalise"}
+        {pending ? "Signing and finalising" : "Countersign and finalise"}
       </button>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-bad-ink">{error}</p>}
     </div>
   );
 }

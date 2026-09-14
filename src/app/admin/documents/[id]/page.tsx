@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import { env } from "@/lib/env";
@@ -10,6 +11,12 @@ import { CopyLink } from "./CopyLink";
 
 export const dynamic = "force-dynamic";
 
+const when = new Intl.DateTimeFormat("en-PH", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Manila",
+});
+
 export default async function DocumentPage({
   params,
 }: PageProps<"/admin/documents/[id]">) {
@@ -17,54 +24,81 @@ export default async function DocumentPage({
   const bundle = await loadDocument(id);
   if (!bundle) notFound();
   const { document, signers, fields } = bundle;
-  const [audit, adminSignature] = await Promise.all([
-    listAudit(id),
-    loadAdminSignature(),
-  ]);
+  const [audit, adminSignature] = await Promise.all([listAudit(id), loadAdminSignature()]);
   const appUrl = env.appUrl();
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">{document.title}</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            {document.clientName} · {document.pageCount} pages
-          </p>
+    <div className="flex flex-col gap-10">
+      <div>
+        <Link href="/admin" className="text-xs text-ink-muted hover:text-ink">
+          All documents
+        </Link>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl">{document.title}</h1>
+            <p className="mt-2 text-sm text-ink-muted">
+              {document.clientName} · {document.pageCount} pages · created {when.format(document.createdAt)}
+            </p>
+          </div>
+          <StatusBadge status={document.status} />
         </div>
-        <StatusBadge status={document.status} />
       </div>
 
-      <section className="rounded-md border border-neutral-200 bg-white p-4">
-        <h2 className="text-sm font-semibold">Signers</h2>
-        <ul className="mt-3 divide-y divide-neutral-100">
+      {document.status === "awaiting_countersign" && (
+        <section className="card reveal border-info-ink/20 bg-info p-6">
+          <p className="font-serif text-2xl text-info-ink">Everyone has signed. Your turn.</p>
+          <p className="mt-1 text-sm text-info-ink/80">
+            Read the signed document below, then apply your saved signature. That finalises it and emails the copies.
+          </p>
+          <div className="mt-4">
+            <CountersignButton documentId={id} hasSavedSignature={!!adminSignature?.signaturePng} />
+          </div>
+        </section>
+      )}
+
+      {document.status === "completed" && (
+        <section className="card reveal border-ok-ink/20 bg-ok p-6">
+          <p className="font-serif text-2xl text-ok-ink">
+            Completed {document.completedAt && when.format(document.completedAt)}
+          </p>
+          <p className="mt-1 break-all font-mono text-[11px] text-ok-ink/70">SHA-256 {document.finalSha256}</p>
+          <a href={`/api/documents/${id}/pdf?final=1`} className="btn btn-primary mt-4">
+            Download signed PDF
+          </a>
+        </section>
+      )}
+
+      <section className="card reveal" style={{ ["--i" as string]: 1 }}>
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <p className="label">Signers</p>
+          {document.status === "draft" && (
+            <p className="text-xs text-ink-muted">Links appear once the document is marked sent</p>
+          )}
+        </div>
+        <ul className="divide-y divide-line">
           {signers.map((signer) => (
-            <li key={signer.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+            <li key={signer.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm">
               <div>
-                <span className="font-medium">{signer.name}</span>
-                {signer.email && <span className="ml-2 text-neutral-500">{signer.email}</span>}
+                <p className="font-medium">{signer.name}</p>
+                <p className="text-xs text-ink-muted">{signer.email ?? "No email, send the link yourself"}</p>
               </div>
               {signer.signedAt ? (
-                <span className="text-xs text-green-700">
-                  Signed {signer.signedAt.toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
-                </span>
-              ) : document.status === "draft" ? (
-                <span className="text-xs text-neutral-400">Link available after sending</span>
-              ) : (
+                <span className="tag bg-ok text-ok-ink">Signed {when.format(signer.signedAt)}</span>
+              ) : document.status !== "draft" ? (
                 <CopyLink url={`${appUrl}/sign/${signer.token}`} />
-              )}
+              ) : null}
             </li>
           ))}
         </ul>
       </section>
 
       {document.status === "draft" && (
-        <section className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="reveal flex flex-col gap-4" style={{ ["--i" as string]: 2 }}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Place signature boxes</h2>
-              <p className="text-xs text-neutral-500">
-                Pick who the box is for, then click on the page. Drag a box to move it. Save, then send.
+              <h2 className="serif text-2xl">Place signature boxes</h2>
+              <p className="mt-1 text-sm text-ink-muted">
+                Choose who the box is for, click where it goes, drag to adjust. One box each, including yours.
               </p>
             </div>
             <SendButton documentId={id} />
@@ -86,55 +120,33 @@ export default async function DocumentPage({
         </section>
       )}
 
-      {document.status === "awaiting_countersign" && (
-        <section className="rounded-md border border-blue-200 bg-blue-50 p-4">
-          <h2 className="text-sm font-semibold text-blue-900">Everyone has signed. Your turn.</h2>
-          <p className="mt-1 text-sm text-blue-800">
-            Review the signed document below, then countersign with your saved signature.
-          </p>
-          <div className="mt-3">
-            <CountersignButton documentId={id} hasSavedSignature={!!adminSignature?.signaturePng} />
-          </div>
-        </section>
-      )}
-
-      {document.status === "completed" && (
-        <section className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-900">
-          <p className="font-semibold">Completed {document.completedAt?.toLocaleString("en-PH", { timeZone: "Asia/Manila" })}</p>
-          <p className="mt-1">
-            SHA-256: <code className="text-xs">{document.finalSha256}</code>
-          </p>
-          <a
-            href={`/api/documents/${id}/pdf?final=1`}
-            className="mt-3 inline-block rounded-md bg-green-700 px-3 py-2 text-sm font-medium text-white"
-          >
-            Download signed PDF
-          </a>
-        </section>
-      )}
-
       {document.status !== "draft" && (
-        <section>
-          <h2 className="text-sm font-semibold">Document</h2>
+        <section className="reveal" style={{ ["--i" as string]: 2 }}>
+          <p className="label mb-3">Document</p>
           <iframe
             src={`/api/documents/${id}/pdf${document.status === "completed" ? "?final=1" : ""}`}
-            className="mt-3 h-[80vh] w-full rounded-md border border-neutral-200 bg-white"
+            className="h-[80vh] w-full rounded-lg border border-line bg-white"
             title="Document preview"
           />
         </section>
       )}
 
-      <section>
-        <h2 className="text-sm font-semibold">Activity</h2>
-        <ul className="mt-3 flex flex-col gap-1 text-xs text-neutral-600">
+      <section className="reveal" style={{ ["--i" as string]: 3 }}>
+        <p className="label mb-3">Activity</p>
+        <ol className="border-l border-line pl-5 text-sm">
           {audit.map((event) => (
-            <li key={event.id}>
-              {event.at.toLocaleString("en-PH", { timeZone: "Asia/Manila" })} · {event.actor} · {event.action}
-              {event.detail && <span className="text-neutral-400"> · {event.detail}</span>}
-              {event.ip && <span className="text-neutral-400"> · {event.ip}</span>}
+            <li key={event.id} className="relative py-1.5">
+              <span className="absolute -left-[23px] top-3 h-1.5 w-1.5 rounded-full bg-line-strong" />
+              <span className="text-ink-muted">{when.format(event.at)}</span>
+              <span className="mx-2 text-ink-faint">·</span>
+              <span className="font-medium">{event.actor}</span>
+              <span className="mx-2 text-ink-faint">·</span>
+              <span>{event.action.replace(".", " ")}</span>
+              {event.detail && <span className="text-ink-muted"> · {event.detail}</span>}
+              {event.ip && <span className="text-ink-faint"> · {event.ip}</span>}
             </li>
           ))}
-        </ul>
+        </ol>
       </section>
     </div>
   );

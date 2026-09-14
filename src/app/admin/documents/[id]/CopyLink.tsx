@@ -7,7 +7,9 @@ export function CopyLink({ url }: { url: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <code className="max-w-[260px] truncate rounded bg-neutral-100 px-2 py-1 text-xs">{url}</code>
+      <code className="max-w-[240px] truncate rounded bg-canvas px-2 py-1 font-mono text-[11px] text-ink-muted">
+        {url}
+      </code>
       <button
         type="button"
         onClick={async () => {
@@ -15,7 +17,7 @@ export function CopyLink({ url }: { url: string }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         }}
-        className="rounded-md border border-neutral-300 px-2 py-1 text-xs"
+        className="btn btn-secondary px-3 py-1.5 text-xs"
       >
         {copied ? "Copied" : "Copy link"}
       </button>

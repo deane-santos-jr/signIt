@@ -25,7 +25,7 @@ export function SignaturePad({ onChange, height = 180 }: Props) {
       if (data) padRef.current?.fromData(data);
     };
     const pad = new SignaturePadLib(canvas, {
-      penColor: "#111827",
+      penColor: "#111111",
       minWidth: 1,
       maxWidth: 2.5,
     });
@@ -42,19 +42,20 @@ export function SignaturePad({ onChange, height = 180 }: Props) {
   }, [onChange]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="relative">
       <canvas
         ref={canvasRef}
         style={{ height }}
-        className="w-full touch-none rounded-md border border-dashed border-neutral-400 bg-white"
+        className="w-full touch-none rounded-md border border-line-strong bg-white"
       />
+      <span className="pointer-events-none absolute inset-x-6 bottom-9 border-b border-line-strong" />
       <button
         type="button"
         onClick={() => {
           padRef.current?.clear();
           onChange(null);
         }}
-        className="self-start text-xs text-neutral-500 underline"
+        className="absolute right-3 top-2 text-xs text-ink-muted hover:text-ink"
       >
         Clear
       </button>

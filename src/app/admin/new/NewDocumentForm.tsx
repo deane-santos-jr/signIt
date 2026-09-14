@@ -5,11 +5,9 @@ import { createDocument } from "../actions";
 
 type SignerDraft = { name: string; email: string };
 
-const input =
-  "w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900";
-
 export function NewDocumentForm() {
   const [signers, setSigners] = useState<SignerDraft[]>([{ name: "", email: "" }]);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -30,46 +28,60 @@ export function NewDocumentForm() {
   }
 
   return (
-    <form action={submit} className="mt-6 flex flex-col gap-5">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Title</span>
-        <input name="title" required className={input} placeholder="Aspire Website – Phase 1 Agreement" />
+    <form action={submit} className="card reveal mt-8 flex flex-col gap-7 p-8">
+      <label className="flex flex-col gap-1.5">
+        <span className="label">Title</span>
+        <input name="title" required className="field" placeholder="Agreement name as the client will see it" />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Client</span>
-        <input name="clientName" required className={input} placeholder="Aspire" />
+      <label className="flex flex-col gap-1.5">
+        <span className="label">Client</span>
+        <input name="clientName" required className="field" placeholder="Business or person" />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">PDF</span>
-        <input name="file" type="file" accept="application/pdf" required className="text-sm" />
+
+      <label className="flex flex-col gap-1.5">
+        <span className="label">PDF</span>
+        <span className="flex cursor-pointer items-center justify-between rounded-md border border-dashed border-line-strong bg-canvas px-4 py-4 text-sm transition-colors hover:border-ink">
+          <span className={fileName ? "text-ink" : "text-ink-muted"}>
+            {fileName ?? "Choose a PDF"}
+          </span>
+          <span className="text-xs text-ink-muted">Browse</span>
+          <input
+            name="file"
+            type="file"
+            accept="application/pdf"
+            required
+            className="sr-only"
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          />
+        </span>
       </label>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium">Signers</legend>
+        <legend className="label mb-1.5">Signers</legend>
         {signers.map((signer, index) => (
           <div key={index} className="flex gap-2">
             <input
               value={signer.name}
               onChange={(e) => update(index, { name: e.target.value })}
               placeholder="Full name"
-              className={input}
+              className="field"
               required={index === 0}
             />
             <input
               value={signer.email}
               onChange={(e) => update(index, { email: e.target.value })}
-              placeholder="Email (optional)"
+              placeholder="Email, optional"
               type="email"
-              className={input}
+              className="field"
             />
             {signers.length > 1 && (
               <button
                 type="button"
                 onClick={() => setSigners((prev) => prev.filter((_, i) => i !== index))}
-                className="px-2 text-neutral-400 hover:text-red-600"
+                className="btn btn-quiet px-2"
                 aria-label="Remove signer"
               >
-                ×
+                Remove
               </button>
             )}
           </div>
@@ -77,20 +89,19 @@ export function NewDocumentForm() {
         <button
           type="button"
           onClick={() => setSigners((prev) => [...prev, { name: "", email: "" }])}
-          className="self-start text-sm text-neutral-600 underline"
+          className="self-start text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
         >
           Add another signer
         </button>
       </fieldset>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {pending ? "Uploading…" : "Continue to place signature boxes"}
-      </button>
+      {error && <p className="rounded-md bg-bad px-3 py-2 text-sm text-bad-ink">{error}</p>}
+      <div className="flex items-center justify-between border-t border-line pt-6">
+        <p className="text-xs text-ink-muted">Nothing is sent until you place boxes and mark it sent.</p>
+        <button type="submit" disabled={pending} className="btn btn-primary">
+          {pending ? "Uploading" : "Continue"}
+        </button>
+      </div>
     </form>
   );
 }

@@ -1,20 +1,13 @@
 import type { Document } from "@/db/schema";
 
 const labels: Record<Document["status"], { text: string; className: string }> = {
-  draft: { text: "Draft", className: "bg-neutral-100 text-neutral-700" },
-  sent: { text: "Awaiting signatures", className: "bg-amber-100 text-amber-800" },
-  awaiting_countersign: {
-    text: "Ready to countersign",
-    className: "bg-blue-100 text-blue-800",
-  },
-  completed: { text: "Completed", className: "bg-green-100 text-green-800" },
+  draft: { text: "Draft", className: "bg-line text-ink-muted" },
+  sent: { text: "Awaiting signatures", className: "bg-sign text-sign-ink" },
+  awaiting_countersign: { text: "Your turn", className: "bg-info text-info-ink" },
+  completed: { text: "Completed", className: "bg-ok text-ok-ink" },
 };
 
 export function StatusBadge({ status }: { status: Document["status"] }) {
   const { text, className } = labels[status];
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}>
-      {text}
-    </span>
-  );
+  return <span className={`tag ${className}`}>{text}</span>;
 }

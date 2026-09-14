@@ -4,36 +4,50 @@ import { StatusBadge } from "@/components/StatusBadge";
 
 export const dynamic = "force-dynamic";
 
+const dateFormat = new Intl.DateTimeFormat("en-PH", {
+  dateStyle: "medium",
+  timeZone: "Asia/Manila",
+});
+
 export default async function AdminHome() {
   const docs = await listDocuments();
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Documents</h1>
-        <Link
-          href="/admin/new"
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white"
-        >
+      <div className="flex items-end justify-between gap-6">
+        <div>
+          <h1 className="text-4xl">Documents</h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            {docs.length === 0 ? "Nothing sent yet." : `${docs.length} in total`}
+          </p>
+        </div>
+        <Link href="/admin/new" className="btn btn-primary">
           New document
         </Link>
       </div>
+
       {docs.length === 0 ? (
-        <p className="mt-8 text-sm text-neutral-500">
-          Nothing yet. Upload a PDF to start.
-        </p>
+        <div className="card reveal mt-10 px-8 py-14 text-center">
+          <p className="font-serif text-2xl">Start with a PDF.</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-ink-muted">
+            Upload the agreement, name who signs, place the boxes, and send each person a private link.
+          </p>
+          <Link href="/admin/new" className="btn btn-secondary mt-6">
+            Upload a document
+          </Link>
+        </div>
       ) : (
-        <ul className="mt-6 divide-y divide-neutral-200 rounded-md border border-neutral-200 bg-white">
-          {docs.map((doc) => (
-            <li key={doc.id}>
+        <ul className="card mt-10 divide-y divide-line">
+          {docs.map((doc, i) => (
+            <li key={doc.id} className="reveal" style={{ ["--i" as string]: i }}>
               <Link
                 href={`/admin/documents/${doc.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-neutral-50"
+                className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-canvas"
               >
-                <div>
-                  <p className="text-sm font-medium">{doc.title}</p>
-                  <p className="text-xs text-neutral-500">
-                    {doc.clientName} · {doc.createdAt.toLocaleDateString("en-PH")}
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{doc.title}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    {doc.clientName} · {dateFormat.format(doc.createdAt)}
                   </p>
                 </div>
                 <StatusBadge status={doc.status} />
