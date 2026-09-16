@@ -14,12 +14,9 @@ export function SendButton({ documentId }: { documentId: string }) {
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            try {
-              setError(null);
-              await markSent(documentId);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not send");
-            }
+            setError(null);
+            const result = await markSent(documentId);
+            if (!result.ok) setError(result.error);
           })
         }
         className="btn btn-secondary"

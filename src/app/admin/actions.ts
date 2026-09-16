@@ -20,6 +20,8 @@ import { deletePdfs, fetchPdf, storePdf } from "@/lib/storage";
 import { finalizeDocument } from "@/lib/finalize";
 import { ADMIN_SETTINGS_ID, loadAdminSignature } from "@/lib/adminSignature";
 
+type ActionResult = { ok: true } | { ok: false; error: string };
+
 const signerInput = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email().optional().or(z.literal("")),
@@ -115,17 +117,20 @@ export async function saveFields(
   revalidatePath(`/admin/documents/${documentId}`);
 }
 
-export async function markSent(documentId: string): Promise<void> {
+export async function markSent(documentId: string): Promise<ActionResult> {
   await requireAdmin();
   const bundle = await loadDocument(documentId);
-  if (!bundle) throw new Error("Document not found");
+  if (!bundle) return { ok: false, error: "Document not found" };
   const missing = bundle.signers.filter(
     (s) => !bundle.fields.some((f) => f.signerId === s.id),
   );
   if (missing.length > 0) {
-    throw new Error(`Place a signature box for: ${missing.map((s) => s.name).join(", ")}`);
+    return {
+      ok: false,
+      error: `Place a signature box for: ${missing.map((s) => s.name).join(", ")}`,
+    };
   }
-  if (!adminField(bundle)) throw new Error("Place your own signature box");
+  if (!adminField(bundle)) return { ok: false, error: "Place your own signature box" };
 
   await db
     .update(documents)
@@ -133,6 +138,7 @@ export async function markSent(documentId: string): Promise<void> {
     .where(eq(documents.id, documentId));
   await recordAudit({ documentId, actor: "admin", action: "document.sent" });
   revalidatePath(`/admin/documents/${documentId}`);
+  return { ok: true };
 }
 
 export async function saveAdminSignature(formData: FormData): Promise<void> {
@@ -152,19 +158,21 @@ export async function saveAdminSignature(formData: FormData): Promise<void> {
   revalidatePath("/admin/settings");
 }
 
-export async function countersign(documentId: string): Promise<void> {
+export async function countersign(documentId: string): Promise<ActionResult> {
   await requireAdmin();
   const bundle = await loadDocument(documentId);
-  if (!bundle) throw new Error("Document not found");
-  if (!allClientsSigned(bundle)) throw new Error("Clients have not all signed yet");
-  if (bundle.document.adminSignedAt) throw new Error("Already countersigned");
+  if (!bundle) return { ok: false, error: "Document not found" };
+  if (!allClientsSigned(bundle)) {
+    return { ok: false, error: "Clients have not all signed yet" };
+  }
+  if (bundle.document.adminSignedAt) return { ok: false, error: "Already countersigned" };
 
   const saved = await loadAdminSignature();
   if (!saved?.signaturePng || !saved.signatureName) {
-    throw new Error("Save your signature in Settings first");
+    return { ok: false, error: "Save your signature in Settings first" };
   }
   const field = adminField(bundle);
-  if (!field) throw new Error("No admin signature box on this document");
+  if (!field) return { ok: false, error: "No admin signature box on this document" };
 
   const signedAt = new Date();
   const origin = await requestOrigin();
@@ -192,6 +200,7 @@ export async function countersign(documentId: string): Promise<void> {
 
   await finalizeDocument(documentId, { name: saved.signatureName, ...origin, signedAt });
   revalidatePath(`/admin/documents/${documentId}`);
+  return { ok: true };
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {

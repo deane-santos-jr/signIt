@@ -29,12 +29,9 @@ export function CountersignButton({ documentId, hasSavedSignature }: Props) {
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            try {
-              setError(null);
-              await countersign(documentId);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not countersign");
-            }
+            setError(null);
+            const result = await countersign(documentId);
+            if (!result.ok) setError(result.error);
           })
         }
         className="btn btn-primary self-start"
