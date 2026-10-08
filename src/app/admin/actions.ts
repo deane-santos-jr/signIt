@@ -10,9 +10,10 @@ import {
   adminField,
   allClientsSigned,
   loadDocument,
+  newSignerRows,
   recordAudit,
 } from "@/lib/documents";
-import { newId, newToken } from "@/lib/ids";
+import { newId } from "@/lib/ids";
 import { pageCountOf, sha256Hex, stampSignature } from "@/lib/pdf";
 import { requestOrigin } from "@/lib/request";
 import { requireAdmin } from "@/lib/session";
@@ -58,15 +59,7 @@ export async function createDocument(formData: FormData): Promise<void> {
     workingUrl: originalUrl,
     pageCount: await pageCountOf(bytes),
   });
-  await db.insert(signers).values(
-    parsed.signers.map((s) => ({
-      id: newId(),
-      documentId: id,
-      name: s.name,
-      email: s.email || null,
-      token: newToken(),
-    })),
-  );
+  await db.insert(signers).values(newSignerRows(id, parsed.signers));
   await recordAudit({
     documentId: id,
     actor: "admin",

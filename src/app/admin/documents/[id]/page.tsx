@@ -63,7 +63,7 @@ export default async function DocumentPage({
             Completed {document.completedAt && when.format(document.completedAt)}
           </p>
           <p className="mt-1 break-all font-mono text-[11px] text-ok-ink/70">SHA-256 {document.finalSha256}</p>
-          <a href={`/api/documents/${id}/pdf?final=1`} className="btn btn-primary mt-4">
+          <a href={`/api/documents/${id}/pdf?final=1&download=1`} className="btn btn-primary mt-4">
             Download signed PDF
           </a>
         </section>

@@ -9,13 +9,29 @@ import {
   type Field,
   type Signer,
 } from "@/db/schema";
-import { newId } from "./ids";
+import { newId, newToken } from "./ids";
 
 export type DocumentBundle = {
   document: Document;
   signers: Signer[];
   fields: Field[];
 };
+
+type SignerDraft = { name: string; email?: string };
+
+export function newSignerRows(
+  documentId: string,
+  drafts: SignerDraft[],
+): (typeof signers.$inferInsert)[] {
+  return drafts.map((draft, position) => ({
+    id: newId(),
+    documentId,
+    name: draft.name,
+    email: draft.email || null,
+    token: newToken(),
+    position,
+  }));
+}
 
 export async function listDocuments(): Promise<Document[]> {
   return db.select().from(documents).orderBy(desc(documents.createdAt));
@@ -32,7 +48,7 @@ export async function loadDocument(id: string): Promise<DocumentBundle | null> {
       .select()
       .from(signers)
       .where(eq(signers.documentId, id))
-      .orderBy(asc(signers.createdAt)),
+      .orderBy(asc(signers.position), asc(signers.id)),
     db.select().from(fields).where(eq(fields.documentId, id)),
   ]);
   return { document, signers: signerRows, fields: fieldRows };

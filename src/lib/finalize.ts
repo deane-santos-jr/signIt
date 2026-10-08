@@ -3,8 +3,9 @@ import { db } from "@/db";
 import { documents } from "@/db/schema";
 import { sendSignedCopy } from "./email";
 import { env } from "./env";
-import { loadDocument, recordAudit } from "./documents";
+import { loadDocument, recordAudit, type DocumentBundle } from "./documents";
 import { appendAuditPage, sha256Hex, type AuditLine } from "./pdf";
+import { signedPdfFileName } from "./pdfFiles";
 import { fetchPdf, storePdf } from "./storage";
 
 type AdminSignature = {
@@ -14,8 +15,20 @@ type AdminSignature = {
   signedAt: Date;
 };
 
-function safeFileName(title: string): string {
-  return `${title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-signed.pdf`;
+const COUNTERSIGNER_ROLE = "Countersigned";
+
+export function certificateLines(
+  bundle: DocumentBundle,
+  admin: AdminSignature,
+): AuditLine[] {
+  const signerLines = bundle.signers.map((s) => ({
+    name: s.name,
+    role: `Signer for ${bundle.document.clientName}`,
+    signedAt: s.signedAt!,
+    ip: s.signedIp,
+    userAgent: s.signedUserAgent,
+  }));
+  return [...signerLines, { ...admin, role: COUNTERSIGNER_ROLE }];
 }
 
 export async function finalizeDocument(
@@ -25,21 +38,7 @@ export async function finalizeDocument(
   const bundle = await loadDocument(documentId);
   if (!bundle) throw new Error("Document not found");
 
-  const lines: AuditLine[] = bundle.signers.map((s) => ({
-    name: s.name,
-    role: `Signer for ${bundle.document.clientName}`,
-    signedAt: s.signedAt!,
-    ip: s.signedIp,
-    userAgent: s.signedUserAgent,
-  }));
-  lines.push({
-    name: admin.name,
-    role: "Developer (countersigned)",
-    signedAt: admin.signedAt,
-    ip: admin.ip,
-    userAgent: admin.userAgent,
-  });
-
+  const lines = certificateLines(bundle, admin);
   const finalBytes = await appendAuditPage(
     await fetchPdf(bundle.document.workingUrl),
     {
@@ -72,6 +71,6 @@ export async function finalizeDocument(
     documentTitle: bundle.document.title,
     clientName: bundle.document.clientName,
     pdf: finalBytes,
-    fileName: safeFileName(bundle.document.title),
+    fileName: signedPdfFileName(bundle.document.title),
   });
 }

@@ -53,6 +53,7 @@ All names, companies, and addresses in these screenshots are made up.
 ```bash
 pnpm dev            # local server
 pnpm db:push        # apply the schema to DATABASE_URL
+pnpm test           # unit tests (node:test via tsx)
 pnpm build          # production build
 vercel deploy --prod
 ```
@@ -61,4 +62,5 @@ vercel deploy --prod
 
 - Signing links never expire and carry no email verification. Add both when a client needs them: `signers.token` and `login_tokens` already model the pieces.
 - Field positions are stored in PDF points with a bottom-left origin, the same frame pdf-lib stamps in.
-- Blobs are private. The app proxies PDFs through `/api/documents/[id]/pdf` (admin) and `/api/sign/[token]/pdf` (signer).
+- Blobs are private. The app proxies PDFs through `/api/documents/[id]/pdf` (admin) and `/api/sign/[token]/pdf` (signer). The admin route serves inline for previews; add `final=1` for the signed copy and `download=1` to download it.
+- Signers are listed in the order they were entered (`signers.position`).
