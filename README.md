@@ -64,3 +64,4 @@ vercel deploy --prod
 - Field positions are stored in PDF points with a bottom-left origin, the same frame pdf-lib stamps in.
 - Blobs are private. The app proxies PDFs through `/api/documents/[id]/pdf` (admin) and `/api/sign/[token]/pdf` (signer). The admin route serves inline for previews; add `final=1` for the signed copy and `download=1` to download it.
 - Signers are listed in the order they were entered (`signers.position`).
+- `signers`, `fields` and `audit_events` are indexed on `document_id`. `pnpm db:push` builds indexes without `CONCURRENTLY`, which blocks writes to that table while it builds. On a large table, run `CREATE INDEX CONCURRENTLY` with the same name and columns as `src/db/schema.ts` first; `db:push` then sees the index and skips it.

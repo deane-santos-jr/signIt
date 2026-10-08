@@ -6,6 +6,7 @@ import {
   real,
   boolean,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const documentStatus = pgEnum("document_status", [
@@ -50,7 +51,7 @@ export const signers = pgTable("signers", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (t) => [index("signers_document_position_idx").on(t.documentId, t.position)]);
 
 export const fields = pgTable("fields", {
   id: text("id").primaryKey(),
@@ -67,7 +68,7 @@ export const fields = pgTable("fields", {
   width: real("width").notNull(),
   height: real("height").notNull(),
   signedAt: timestamp("signed_at", { withTimezone: true }),
-});
+}, (t) => [index("fields_document_idx").on(t.documentId)]);
 
 export const auditEvents = pgTable("audit_events", {
   id: text("id").primaryKey(),
@@ -80,7 +81,7 @@ export const auditEvents = pgTable("audit_events", {
   userAgent: text("user_agent"),
   detail: text("detail"),
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [index("audit_events_document_at_idx").on(t.documentId, t.at)]);
 
 export const loginTokens = pgTable("login_tokens", {
   token: text("token").primaryKey(),
