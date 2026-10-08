@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import SignaturePadLib from "signature_pad";
+import { trimmedPngDataUrl } from "@/lib/signatureImage";
 
 type Props = {
   onChange: (pngDataUrl: string | null) => void;
@@ -30,7 +31,7 @@ export function SignaturePad({ onChange, height = 180 }: Props) {
       maxWidth: 2.5,
     });
     pad.addEventListener("endStroke", () => {
-      onChange(pad.isEmpty() ? null : pad.toDataURL("image/png"));
+      onChange(trimmedPngDataUrl(canvas));
     });
     padRef.current = pad;
     resize();

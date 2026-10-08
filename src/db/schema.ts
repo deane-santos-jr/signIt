@@ -46,6 +46,7 @@ export const signers = pgTable("signers", {
   signedAt: timestamp("signed_at", { withTimezone: true }),
   signedIp: text("signed_ip"),
   signedUserAgent: text("signed_user_agent"),
+  position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

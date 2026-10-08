@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import type { Field } from "@/db/schema";
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -48,6 +48,58 @@ export async function stampSignature(
   return pdf.save();
 }
 
+export type TextFit = {
+  font: PDFFont;
+  size: number;
+  maxWidth: number;
+  maxLines: number;
+};
+
+const ELLIPSIS = "…";
+
+function fits(text: string, fit: TextFit): boolean {
+  return fit.font.widthOfTextAtSize(text, fit.size) <= fit.maxWidth;
+}
+
+function splitToWidth(word: string, fit: TextFit): string[] {
+  const pieces = [""];
+  for (const char of word) {
+    const last = pieces[pieces.length - 1];
+    if (last === "" || fits(last + char, fit)) pieces[pieces.length - 1] = last + char;
+    else pieces.push(char);
+  }
+  return pieces;
+}
+
+function wrapWords(text: string, fit: TextFit): string[] {
+  const lines: string[] = [];
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const extended = lines.length > 0 ? `${lines[lines.length - 1]} ${word}` : null;
+    if (extended !== null && fits(extended, fit)) lines[lines.length - 1] = extended;
+    else lines.push(...splitToWidth(word, fit));
+  }
+  return lines;
+}
+
+function dropLastWord(text: string): string {
+  const lastSpace = text.lastIndexOf(" ");
+  return lastSpace > 0 ? text.slice(0, lastSpace) : text.slice(0, -1);
+}
+
+function endWithEllipsis(line: string, fit: TextFit): string {
+  let kept = line;
+  while (kept && !fits(kept + ELLIPSIS, fit)) kept = dropLastWord(kept);
+  return kept + ELLIPSIS;
+}
+
+export function wrapText(text: string, fit: TextFit): string[] {
+  const lines = wrapWords(text, fit);
+  if (lines.length <= fit.maxLines) return lines;
+  const kept = lines.slice(0, fit.maxLines);
+  kept[kept.length - 1] = endWithEllipsis(kept[kept.length - 1], fit);
+  return kept;
+}
+
 export type AuditLine = {
   name: string;
   role: string;
@@ -70,8 +122,16 @@ export async function appendAuditPage(
   const pdf = await PDFDocument.load(pdfBytes);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const page = pdf.addPage([595.28, 841.89]);
+  const [pageWidth, pageHeight] = [595.28, 841.89];
+  const page = pdf.addPage([pageWidth, pageHeight]);
   const left = 56;
+  const detailIndent = 12;
+  const deviceFit: TextFit = {
+    font,
+    size: 8,
+    maxWidth: pageWidth - 2 * left - detailIndent,
+    maxLines: 3,
+  };
   let cursor = 780;
 
   const write = (text: string, size = 10, useBold = false, indent = 0) => {
@@ -94,9 +154,13 @@ export async function appendAuditPage(
 
   for (const line of audit.lines) {
     write(`${line.name} · ${line.role}`, 10, true);
-    write(`Signed ${formatStamp(line.signedAt)} (Asia/Manila)`, 9, false, 12);
-    if (line.ip) write(`IP address: ${line.ip}`, 9, false, 12);
-    if (line.userAgent) write(`Device: ${line.userAgent.slice(0, 110)}`, 8, false, 12);
+    write(`Signed ${formatStamp(line.signedAt)} (Asia/Manila)`, 9, false, detailIndent);
+    if (line.ip) write(`IP address: ${line.ip}`, 9, false, detailIndent);
+    if (line.userAgent) {
+      for (const deviceLine of wrapText(`Device: ${line.userAgent}`, deviceFit)) {
+        write(deviceLine, deviceFit.size, false, detailIndent);
+      }
+    }
     cursor -= 6;
   }
 
